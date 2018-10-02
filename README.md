@@ -38,9 +38,9 @@ in each line to the application). Additionally, the prototype will only report o
 # Answers:
 
 ## Question 1: 
-  *A. 15 minutes for lunch and dinner depends on the place. If I'm going to grins, probably also 10-15 minutes.
-  *B. 1.5 minutes for lunch and 3 minutes for dinner
-  *C. 20 minutes at lunch and 10 at dinner.
+  * A. 15 minutes for lunch and dinner depends on the place. If I'm going to grins, probably also 10-15 minutes.
+  * B. 1.5 minutes for lunch and 3 minutes for dinner
+  * C. 20 minutes at lunch and 10 at dinner.
 
 ## Question 2:
   *A. Typically, I'll eat lunch and dinner because I don't have time in the morning to eat breakfast. I'm usually in a rush in the
