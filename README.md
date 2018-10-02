@@ -135,8 +135,15 @@ in each line to the application). Additionally, the prototype will only report o
   *
 
 # Development Approach
-## 1. Requirements
+## 1. Requirements Gathering
+After selecting the topic of Vanderbilt Campus dining lines, I created 15 questions to capture users motivations, frustrations, and needs surrounding this topic. Using these questions, I interviewed three users from my target user group (Vanderbilt students who eat meals on campus) and recorded their responses. This interview process is essential to empathize with the user, start to understand what the users actually want in an application, and confirm assumptions. If these key topics are not understood, the developers are at a great risk of building the wrong thing. While software may function "correctly," its of no use to the user if they don't actually want, need, or like to use it. Next, I compiled the comments from interviews into a categorized list so I could clearly skim over all the users comments and convert them into formal requirements.
+
 ## 2. Design
+
 ## 3. Implementation
+
+talk about asking for users feedback on the incremental prototypes--make sure you're building the right thing
+
 ## 4. Testing
+
 ## 5. Maintenance
