@@ -1,19 +1,19 @@
 # CSx278-Asgn5
 # Vanderbilt Campus Dining Lines
 
-	In this project, I sought to make a texting application that would inform students about campus dining lines. 
+In this project, I sought to make a texting application that would inform students about campus dining lines. 
 To find out the users' needs, I interviewed three students on their opinions about campus dining lines. Overall, the users 
 felt that campus dining lines were consistently long at certain times, but it was hard to know which one was longest. Also, 
 when walking from far away, students would like to know the length of the line. While they sited their distaste for waiting 
 in long line, they all have to eat lunch in a certain period before classes and must eat on campus as its on the meal plan 
 paid for by parents.
 
-	Consuqeuntly, I will create a texting application that will let students know the length of campus dining lines. This
+Consuqeuntly, I will create a texting application that will let students know the length of campus dining lines. This
 application should respond to students questions about the shortest line in a certain area, the length of a certain line, and
 the lines under a given length. The length of a line will described by the time it takes to go through the entire line and recieve
 food, not the amount of people in line.
 
-	The wait time for a line will be calculated by multiplying the number of people in line by the average amount of time it
+The wait time for a line will be calculated by multiplying the number of people in line by the average amount of time it
 takes for one person to go through the line. While the final application would detect the number of people in line using cameras 
 placed in dining halls, the prototype will rely on crowdsourcing (i.e. users or Vanderbilt staff will text in the number of people
 in each line to the application). Additionally, the prototype will only report on a few dining halls.
