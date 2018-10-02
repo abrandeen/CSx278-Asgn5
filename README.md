@@ -135,5 +135,8 @@ in each line to the application). Additionally, the prototype will only report o
   *
 
 # Development Approach
-   
-   .... your approach here ....
+## 1. Requirements
+## 2. Design
+## 3. Implementation
+## 4. Testing
+## 5. Maintenance
