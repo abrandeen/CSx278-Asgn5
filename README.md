@@ -125,3 +125,15 @@ in each line to the application). Additionally, the prototype will only report o
   * A. Wait time because the same length line takes a very different amount of time at different places.
   * B. Wait time because it means more to me.
   * C. Wait time because some lines move faster than others so knowing the number of people is not as helpful.
+  
+# Requirements 
+  * 
+  *
+  *
+  *
+  *
+  *
+
+# Development Approach
+   
+   .... your approach here ....
