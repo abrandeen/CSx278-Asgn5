@@ -43,11 +43,11 @@ in each line to the application). Additionally, the prototype will only report o
   * C. 20 minutes at lunch and 10 at dinner.
 
 ## Question 2:
-  *A. Typically, I'll eat lunch and dinner because I don't have time in the morning to eat breakfast. I'm usually in a rush in the
+  * A. Typically, I'll eat lunch and dinner because I don't have time in the morning to eat breakfast. I'm usually in a rush in the
      morning and eat a smaller breakfast so don't feel like I need to waste a whole meal swipe on breakfast. I usually eat grins
      because its healthyish, pub because it has a central location, and EBI because the line moves fast.
-  *B. Lunch because its the most convient during the day. I usually eat Ranwhiches.
-  *C. I eat bowls for lunch and Kissam for dinner because they're healthy options. I don't eat breakfast because I don't want to 
+  * B. Lunch because its the most convient during the day. I usually eat Ranwhiches.
+  * C. I eat bowls for lunch and Kissam for dinner because they're healthy options. I don't eat breakfast because I don't want to 
      pay for a full meal for breakfast.
 
 ## Question 3: 
