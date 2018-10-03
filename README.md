@@ -53,7 +53,7 @@ in each line to the application). Additionally, the prototype will only report o
 ## Question 3: 
   * A. Kind of, right at the peak times I try to avoid them, but in between classes its usually shorter. Grins is very unpredictable 
      though.
-  * B. Yes, they're pretty long when clas lets out and at peak dinner hours.
+  * B. Yes, they're pretty long when class lets out and at peak dinner hours.
   * C. No, the lines are always long at certain times, but I never know which will take the longest.
 
 ## Question 4:
@@ -63,7 +63,7 @@ in each line to the application). Additionally, the prototype will only report o
   * C. I'll wait to eat lunch.
 
 ## Question 5: 
-  * A. I don't wait in lines becayse I'm impatient and usually in a hurry. If I'm eating with people and they're in a shorter line, I 
+  * A. I don't wait in lines because I'm impatient and usually in a hurry. If I'm eating with people and they're in a shorter line, I 
      go to shorter lines because I want to sit and eat with them.
   * B. I don't wait in long lines because I don't think the food is good enough to wait for.
   * C. I don't wait in lines because I have to get to class. 
@@ -127,18 +127,26 @@ in each line to the application). Additionally, the prototype will only report o
   * C. Wait time because some lines move faster than others so knowing the number of people is not as helpful.
   
 # Requirements 
-  * 
-  *
-  *
-  *
-  *
-  *
+  * Shall accept and parse text message questions from users.
+  * Shall answer questions about the shortest line in a given area by texting the user the name of the single shortest line in the given area.
+  * Shall answer questions about the length of a certain line by texting the user the closest whole minute estimate.
+  * Shal answer questions about the lines under a given length, as specified by the user's text, by texting the user a list of all lines under the given wait time.
+  * Shall answer questions about the status of Grins (open or closed) by texting the user either "Grins is open today" or "Grins is closed today".
+  * Shall describe the length of the line by the time that it will take the current last person in line to recieve their food
+  * Shall include information on Rand (Randwhiches and Bowls), Pub, and Grins.
+  * Shall accept questions in a specified format and alert the user if the format is incorrect.
+  * Should calculate line time using the number of people in line using a specific, studied multiplier for each.
+  * Should include all campus dining options.
+  * Should accept questions in any format.
 
 # Development Approach
 ## 1. Requirements Gathering
 After selecting the topic of Vanderbilt Campus dining lines, I created 15 questions to capture users motivations, frustrations, and needs surrounding this topic. Using these questions, I interviewed three users from my target user group (Vanderbilt students who eat meals on campus) and recorded their responses. This interview process is essential to empathize with the user, start to understand what the users actually want in an application, and confirm assumptions. If these key topics are not understood, the developers are at a great risk of building the wrong thing. While software may function "correctly," its of no use to the user if they don't actually want, need, or like to use it. Next, I compiled the comments from interviews into a categorized list so I could clearly skim over all the users comments and convert them into formal requirements.
 
 ## 2. Design
+To design the application, I will start with the design of the experts texting application and adapt it to meet the Vanderbilt dining lines requirements. I will use the same pattern of returning actions to be taken as a list instead of invoking them directly from the function. This pattern limits the number of side effects functions have and makes them more modular and easier to test. Following the pattern from the experts application, I will create one major function for each question the app should respond to. I will fully describe each of these functions expected inputs and outputs and how to deal with unexpected input and edge cases.
+
+I will also design new tests cases for this application by adapting tests from the experts application. Writing tests before development helps tests to be independent of my implementation of the methods. These tests will also ensure the application is sustainable as any future changes or additional features should also pass these tests.
 
 ## 3. Implementation
 
