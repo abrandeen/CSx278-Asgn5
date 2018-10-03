@@ -146,12 +146,16 @@ After selecting the topic of Vanderbilt Campus dining lines, I created 15 questi
 ## 2. Design
 To design the application, I will start with the design of the experts texting application and adapt it to meet the Vanderbilt dining lines requirements. I will use the same pattern of returning actions to be taken as a list instead of invoking them directly from the function. This pattern limits the number of side effects functions have and makes them more modular and easier to test. Following the pattern from the experts application, I will create one major function for each question the app should respond to. I will fully describe each of these functions expected inputs and outputs and how to deal with unexpected input and edge cases.
 
+Additionally, I will continue using a map as the appliation state, but will design a new data model for this map to meet the storage needs of this applications.
+
 I will also design new tests cases for this application by adapting tests from the experts application. Writing tests before development helps tests to be independent of my implementation of the methods. These tests will also ensure the application is sustainable as any future changes or additional features should also pass these tests.
 
 ## 3. Implementation
-
-talk about asking for users feedback on the incremental prototypes--make sure you're building the right thing
+I will utilize an Agile approach to developing this application, implementing each type of question (a "feature") the application should respond to in a different sprint. After each sprint, I will have a new icremental working version of the application that is able to be tested. This incremental testing ensures that the current version of the application is never far from the last working version. The waterfall approach takes the risk of developing all the features at once, the application not functioning correctly, and the developers having little idea where the errors are occuring. With this Agile implementation, if an error occurs, it must be in the most recent feature/sprint as the last sprint produced a functional application.
 
 ## 4. Testing
+To ensure the application is built correctly, both in design and execution, I will conduct tests within the code and user testing. The code tests will be adapted from the previous application to ensure all expected and edge cases for each question are handled, as well as the case where a user sends a text in an invalid format. Specifically, it will ensure the correct actions are being returned from the functions and the correct string is being returned. This testing will ensure the app is built "right."
+
+Equally important, I will conduct incremental user testing in between sprints to get users' feedback on the application. Users will be asked to use the application and give their thoughts throughout the process. They will also be asked about ease of use, design, etc. Their responses will be taken into account and the design will be adapted as neccessary for the next sprint. Getting feedback early in the development process is imperative as it is much less costly to make changes now than later. This testing will ensure the "right" app is built.
 
 ## 5. Maintenance
