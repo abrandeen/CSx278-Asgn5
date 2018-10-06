@@ -1,6 +1,5 @@
 (ns asgnx.core
   (:require [clojure.string :as string]
-            [clojure.core.logic :as logic]
             [clojure.core.async :as async :refer [go chan <! >!]]
             [asgnx.kvstore :as kvstore
              :refer [put! get! list! remove!]]))
@@ -152,15 +151,18 @@
 ;;     :user-id "+15555555555"
 ;;     :args ["number" "line name"]
 ;; where "number" contains the number of people currently in the line "line name"
-(defn update-line-length [{:keys [user-id args]}]
-  (let [number (read-string (first args))
+(defn update-line-length [line-lengths {:keys [user-id args]}]
+  (let [number (if (not (nil? (first args)))
+                 (read-string (first args))
+                 "invalid")
         line (second args)]
    ;; If input is valid, store the newly calculated wait time (to the closest whole minute)
-   (if (and (integer? number) (>= number 0) (not (nil? (get dining-info line))))
-    [[(action-insert [line] (int (+ 0.5 (* number (get-in dining-info [line :time])))))]
-     (str "Wait time in the " line " line successfully updated.")
+   (if
+     (and (integer? number) (>= number 0) (not (nil? (get dining-info line))))
+    [[(action-insert [:lengths line] (int (+ 0.5 (* number (get-in dining-info [line :time])))))]
+     (str "Wait time in the " line " line successfully updated.")]
      [[(action-send-msg user-id "Invalid input. Please try again using the format 'update number name'")]
-      "Invalid input to update-line-length."]])))
+      "Invalid input to update-line-length."])))
 
 
 ;; update-open-status
@@ -185,10 +187,10 @@
       "Invalid input to update-open-status."]
      ;; From closed to open
      (and (= -1 curr-status) (= "open" status))
-     [[(action-insert [line] 0)] (str line " is now marked as open!")]
+     [[(action-insert [:lengths line] 0)] (str line " is now marked as open!")]
      ;; From open to closed
-     (and (logic/!= -1 curr-status) (= "closed" status))
-     [[(action-insert [line] -1)] (str line " is now marked as closed :(")]
+     (and (not (= -1 curr-status)) (= "closed" status))
+     [[(action-insert [:lengths line] -1)] (str line " is now marked as closed :(")]
      ;; No status change
      :else
      [[] (str line " is already marked as " status ".")])))
@@ -237,7 +239,7 @@
 ;; The "area" paramter is optional
 (defn shortest-line [line-lengths {:keys [user-id args]}]
   (let [area (first args)
-        lengths-in-area (if ((or (= area "rand") (= area "other")))
+        lengths-in-area (if (or (= area "rand") (= area "other"))
                           (filter #(= area (get-in dining-info [(first %) :area])) line-lengths)
                           line-lengths)
         format-area (if (or (= area "rand") (= area "other"))
@@ -250,7 +252,7 @@
      [[(action-send-msg user-id (str "The shortest line " format-area " is the "
                                     ;; @InspiredBy
                                     ;; @Source: https://www.spacjer.com/blog/2016/01/12/lesser-known-clojure-max-key-and-min-key/
-                                     (first (apply min-key second (filter #(logic/!= (second %) -1) lengths-in-area)))
+                                     (first (apply min-key second (filter #(not (= (second %) -1)) lengths-in-area)))
                                      ;; @EndInspiredBy
                                      " line."))]
       (str "Texting the user the name of shortest line " format-area ".")]
@@ -302,12 +304,14 @@
 ;;     :args ["minutes"]
 ;; where minutes is the specified time limit lines the user is interested in
 (defn lines-under-length [line-lengths {:keys [user-id args]}]
-  (let [time-limit (first args)]
+  (let [time-limit (if (nil? (first args))
+                     "invalid"
+                     (read-string (first args)))]
     (cond
       ;; Invalid time limit
       (or (not (integer? time-limit)) (<= time-limit 0))
       [[(action-send-msg user-id "Please try again with a valid time limit.")]
-       "Invalid time limit sent to lines-under-length"]
+       "Invalid time limit sent to lines-under-length."]
       ;; No line length info entered
       (nil? line-lengths)
       [[(action-send-msg user-id "Sorry, there is no information available on line lengths.")]
@@ -315,13 +319,13 @@
       ;; Valid input--find lines under the given time limit
       :else
       (let [lines-under (filter
-                         #(and (logic/!= (second %) -1)(< (second %) time-limit)) line-lengths)]
+                         #(and (not (= (second %) -1))(< (second %) time-limit)) line-lengths)]
         (if (empty? lines-under)
          ;; No lines under time limit
           [[(action-send-msg user-id (str "There are currently no lines under a " time-limit " minute wait."))]
            "Texting the user that no lines are under the limit."]
          ;; Send the user the list of lines under the time limit
-          [[(action-send-msg user-id (str "The lines under a " time-limit " wait are "
+          [[(action-send-msg user-id (str "The lines under a " time-limit " minute wait are "
                                       (string/join ", " (reduce #(conj %1 (first %2)) [] lines-under))))]
            (str "Texting the user the list of lines under " time-limit " minutes.")])))))
 
@@ -342,7 +346,7 @@
 
 ;; Don't edit!
 (defn line-lengths-query [state-mgr pmsg]
-  state-mgr)
+  (get! state-mgr [:lengths]))
 
 
 ;; Don't edit!
@@ -353,7 +357,8 @@
 
 ;; Don't edit!
 (def queries
-  {"status"   line-lengths-query
+  {"update"   line-lengths-query
+   "status"   line-lengths-query
    "open"     line-lengths-query
    "shortest" line-lengths-query
    "length"   line-lengths-query
