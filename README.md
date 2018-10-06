@@ -150,6 +150,8 @@ Additionally, I will continue using a map as the appliation state, but will desi
 
 I will also design new tests cases for this application by adapting tests from the experts application. Writing tests before development helps tests to be independent of my implementation. These tests will also ensure the application is sustainable as any future changes or additional features should also pass these tests.
 
+To estimate the time it would take to prototype this application, I would consider the time it took to develop the experts texting app. As that app took about a week to develop and this application is a modification of that application with some additional features, I estimate it will take about 1.5 weeks to code. As I also have to deploy the application using AWS, I estimate the whole coding and deployment process will take about 2 weeks. Estimating the development time of the application would require more testing and informatin gathering as additional technology would be needed to collect data on the number of people in each campus dining line in real-time.
+
 ## 3. Implementation
 I will utilize an Agile approach to developing this application, implementing each type of question (a "feature") the application should respond to in a different sprint. After each sprint, I will have a new icremental working version of the application that is able to be tested. This incremental testing ensures that the current version of the application is never far from the last working version. The waterfall approach takes the risk of developing all the features at once, the application not functioning correctly, and the developers having little idea where the errors are occuring. With this Agile implementation, if an error occurs, it must be in the most recent feature/sprint as the last sprint produced a functional application.
 
@@ -159,6 +161,4 @@ To ensure the application is built correctly, both in design and execution, I wi
 Equally important, I will conduct incremental user testing in between sprints to get users' feedback on the application. Users will be asked to use the application and give their thoughts throughout the process. They will also be asked about ease of use, design, etc. Their responses will be taken into account and the design will be adapted as neccessary for the next sprint. Getting feedback early in the development process is imperative as it is much less costly to make changes now than later. This testing will ensure the "right" app is built.
 
 ## 5. Maintenance
-Ask about this in class
-
-Also need to include: "How you handle estimation and communication of estimates, estimate refinement, etc." ask about this in class
+The maintenance of this application would involve further cycles of development. The usage of this application will be monitored to find additional features, bugs, or opportunities for general improvement. This process would include interviewing current users and acting as a test user myself. When additional feature or fixes to the application become apparent, this development cycle will start again from step 1, gathering requirement, and continue through design, implementation, and testing. 
