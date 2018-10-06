@@ -1,25 +1,9 @@
 (ns asgnx.core
   (:require [clojure.string :as string]
+            [clojure.core.logic :as logic]
             [clojure.core.async :as async :refer [go chan <! >!]]
             [asgnx.kvstore :as kvstore
              :refer [put! get! list! remove!]]))
-
-
-;; Do not edit!
-;; A def for the course home page URL.
-(def cs4278-brightspace "https://brightspace.vanderbilt.edu/d2l/home/85892")
-
-
-;; Do not edit!
-;; A map specifying the instructor's office hours that is keyed by day of the week.
-(def instructor-hours {"tuesday"  {:start    8
-                                   :end      10
-                                   :location "the chairs outside of the Wondry"}
-
-                       "thursday" {:start    8
-                                   :end      10
-                                   :location "the chairs outside of the Wondry"}})
-
 
 ;; This is a helper function that you might want to use to implement
 ;; `cmd` and `args`.
@@ -27,6 +11,15 @@
   (if msg
       (string/split msg #" ")
       []))
+
+;; Map that stores the average amount of time it takes for one person to go
+;; through each campus dining line in minutes and the general area of each location
+(def dining-info {"bowls"     {:time 2 :area "rand"}
+                  "randwich"  {:time 2.25 :area "rand"}
+                  "pasta"     {:time 1.5 :area "rand"}
+                  "pub"       {:time 2.75 :area "other"}
+                  "grins"     {:time 3.5 :area "other"}
+                  "kissam"    {:time 1.75 :area "other"}})
 
 ;; Asgn 1.
 ;;
@@ -68,95 +61,6 @@
 ;;
 (defn parsed-msg [msg]
   (hash-map :cmd (cmd msg) :args (args msg)))
-
-;; Asgn 1.
-;;
-;; @Todo: Fill in this function to prefix the first of the args
-;; in a parsed message with "Welcome " and return the result.
-;;
-;; Example:
-;;
-;; (welcome {:cmd "welcome" :args ["foo"]}) => "Welcome foo"
-;;
-;; See the welcome-test in test/asgnx/core_test.clj for the
-;; complete specification.
-;;
-(defn welcome [pmsg]
-  (let [x (str "Welcome " (first (get pmsg :args)))]
-    (do (print x) x)))
-
-;; Asgn 1.
-;;
-;; @Todo: Fill in this function to return the CS 4278 home page.
-;; Use the `cs4278-brightspace` def to produce the output.
-;;
-;; See the homepage-test in test/asgnx/core_test.clj for the
-;; complete specification.
-;;
-(defn homepage [_]
-  cs4278-brightspace)
-
-
-;; Asgn 1.
-;;
-;; @Todo: Fill in this function to convert from 0-23hr format
-;; to AM/PM format.
-;;
-;; Example: (format-hour 14) => "2pm"
-;;
-;; See the format-hour-test in test/asgnx/core_test.clj for the
-;; complete specification.
-;;
-(defn format-hour [h]
-  (cond
-    (= h 0) "12am"
-    (> h 12) (str (- h 12) "pm")
-    (< h 12) (str h "am")
-    :else "12pm"))
-
-;; Asgn 1.
-;;
-;; @Todo: This function should take a map in the format of
-;; the values in the `instructor-hours` map (e.g. {:start ... :end ... :location ...})
-;; and convert it to a string format.
-;;
-;; Example:
-;; (formatted-hours {:start 8 :end 10 :location "the chairs outside of the Wondry"}))
-;; "from 8am to 10am in the chairs outside of the Wondry"
-;;
-;; You should use your format-hour function to implement this.
-;;
-;; See the formatted-hours-test in test/asgnx/core_test.clj for the
-;; complete specification.
-;;
-(defn formatted-hours [hours]
-  (str "from "
-       (format-hour (get hours :start))
-       " to "
-       (format-hour (get hours :end))
-       " in "
-       (get hours :location)))
-
-;; Asgn 1.
-;;
-;; @Todo: This function should lookup and see if the instructor
-;; has office hours on the day specified by the first of the `args`
-;; in the parsed message. If so, the function should return the
-;; `formatted-hours` representation of the office hours. If not,
-;; the function should return "there are no office hours on that day".
-;; The office hours for the instructor should be obtained from the
-;; `instructor-hours` map.
-;;
-;; You should use your formatted-hours function to implement this.
-;;
-;; See the office-hours-for-day-test in test/asgnx/core_test.clj for the
-;; complete specification.
-;;
-(defn office-hours [{:keys [args cmd]}]
-  (if (nil? (get instructor-hours (first args)))
-    "there are no office hours on that day"
-    (formatted-hours (get instructor-hours (first args)))))
-
 
 ;; Asgn 2.
 ;;
@@ -236,227 +140,190 @@
 (defn action-remove [ks]
   (sorted-map :action :dissoc-in :ks ks))
 
-;; Asgn 3.
-;;
-;; @Todo: Create a function called "experts-register"
-;; that takes the current application `state`, a `topic`
-;; the expert's `id` (e.g., unique name), and information
-;; about the expert (`info`) and registers them as an expert on
-;; the specified topic. Look at the associated test to see the
-;; expected function signature.
-;;
-;; Your function should NOT directly change the application state
-;; to register them but should instead return a list of the
-;; appropriate side-effects (above) to make the registration
-;; happen (hint: action-insert).
-;;
-;; See the integration test in See handle-message-test for the
-;; expectations on how your code operates
-;;
-(defn experts-register [experts topic id info]
-  (action-insert [:expert topic id] info))
 
-;; Asgn 3.
+;; update-line-length
 ;;
-;; @Todo: Create a function called "experts-unregister"
-;; that takes the current application `state`, a `topic`
-;; and the expert's `id` (e.g., unique name) and then
-;; removes the expert from the list of experts on that topic.
-;; Look at the associated test to see the expected function signature.
+;; Updates the length of a specified campus dining line by accepting the
+;; number of people currently in line and multiplying by the average time per person.
+;; Does not directly change the application state, but returns list of side effects
 ;;
-;; Your function should NOT directly change the application state
-;; to unregister them but should instead return a list of the
-;; appropriate side-effects (above) to make the registration
-;; happen (hint: action-remove).
-;;
-;; See the integration test in See handle-message-test for the
-;; expectations on how your code operates
-;;
-(defn experts-unregister [experts topic id]
-  (action-remove [:expert topic id]))
-
-(defn experts-question-msg [experts question-words]
-  (str "Asking " (count experts) " expert(s) for an answer to: \""
-       (string/join " " question-words) "\""))
-
-;; Asgn 3.
-;;
-;; @Todo: Create a function called "ask-experts"
-;; that takes two parameters:
-;;
-;; 1. the list of experts on the topic
-;; 2. a parsed message with the format:
-;;    {:cmd "ask"
-;;     :user-id "phone number that sent the message"
-;;     :args [topic question-word1 question-word2 ... question-wordN]}
-;;
-;; The sender of the message will be identified by their phone number
-;; in the user-id parameter. This is the phone number that you will need
-;; to forward answers to the question to.
-;;
-;; The parsed message is generated by breaking up the words in the ask
-;; text message. For example, if someone sent the message:
-;;
-;; "ask food what is the best pizza in nashville"
-;;
-;; The parsed message would be:
-;;
-;; {:cmd "ask"
-;;  :user-id "+15555555555"
-;;  :args ["food" "what" "is" "the" "best" "pizza" "in" "nashville"]}
-;;
-;; This function needs to return a list with two elements:
-;; [[actions...] "response to asker"]
-;;
-;; The actions in the list are the *side effects* that need to take place
-;; to ask the question (e.g., sending messages to the experts). The string
-;; is the response that is going to be sent back to the person that asked
-;; the question (e.g. "Asking 2 expert(s) for an answer to ....").
-;;
-;; The correct string response to a valid question should be produced with
-;; the `experts-question-msg` function above.
-;;
-;; Think about how you are going to figure out where to route messages
-;; when an expert answers (see the conversations query) and make sure you
-;; handle the needed side effect for storing the conversation state.
-;;
-;; If there are no registered experts on a topic, you should return an
-;; empty list of actions and "There are no experts on that topic."
-;;
-;; If there isn't a question, you should return "You must ask a valid question."
-;;
-;; Why this strange architecture? By returning a list of the actions to take,
-;; rather than directly taking that action, we can keep this function pure.
-;; Pure functions are WAY easier to test / maintain. Also, we can isolate our
-;; messy impure action handling at the "edges" of the application, where it is
-;; easier to track and reason about.
-;;
-;; You should look at `handle-message` to get an idea of the way that this
-;; function is going to be used, its expected signature, and how the actions
-;; and output are going to work.
-;;
-;; See the integration test in See handle-message-test for the
-;; expectations on how your code operates
-;;
-(defn ask-experts [experts {:keys [args user-id]}]
-  (cond (empty? experts) [[] "There are no experts on that topic."]
-    (empty? (second args)) [[] "You must ask a valid question."]
-    :else [(concat (action-inserts [:conversations] experts user-id)
-            (action-send-msgs experts (string/join " " (rest args))))
-           (experts-question-msg experts (rest args))]))
-
-;; Asgn 3.
-;;
-;; @Todo: Create a function called "answer-question"
-;; that takes two parameters:
-;;
-;; 1. the last conversation describing the last question that was routed
-;;    to the expert
-;; 2. a parsed message with the format:
-;;    {:cmd "ask"
+;; Takes input as a parsed message with the format:
+;;    {:cmd "update"
 ;;     :user-id "+15555555555"
-;;     :args [topic answer-word1 answer-word2 ... answer-wordN]}
-;;
-;; The parsed message is generated by breaking up the words in the ask
-;; text message. For example, if someone sent the message:
-;;
-;; "answer joey's house of pizza"
-;;
-;; The conversation will be data that you store as a side-effect in
-;; ask-experts. You probably want this data to be information about the
-;; last question asked to each expert. See the "think about" comment above.
-;;
-;; The parsed message would be:
-;;
-;; {:cmd "answer"
-;;  :user-id "+15555555555"
-;;  :args ["joey's" "house" "of" "pizza"]}
-;;
-;; This function needs to return a list with two elements:
-;; [[actions...] "response to expert answering"]
-;;
-;; The actions in the list are the *side effects* that need to take place
-;; to send the answer to the original question asker. The string
-;; is the response that is going to be sent back to the expert answering
-;; the question.
-;;
-;; Think about how you are going to figure out where to route messages
-;; when an expert answers (see the conversations query) and make sure you
-;; handle the needed side effect for storing the conversation state.
-;;
-;; If there are no registered experts on a topic, you should return an
-;; empty list of actions and "There are no experts on that topic."
-;;
-;; If there isn't a question, you should return "You must ask a valid question."
-;;
-;; Why this strange architecture? By returning a list of the actions to take,
-;; rather than directly taking that action, we can keep this function pure.
-;; Pure functions are WAY easier to test / maintain. Also, we can isolate our
-;; messy impure action handling at the "edges" of the application, where it is
-;; easier to track and reason about.
-;;
-;; You should look at `handle-message` to get an idea of the way that this
-;; function is going to be used, its expected signature, and how the actions
-;; and output are going to work.
-;;
-;; See the integration test in See handle-message-test for the
-;; expectations on how your code operates
-;;
-(defn answer-question [conversation {:keys [args]}]
- (cond
-   ;; Check if args contains an answer
-   (empty? args) [[]"You did not provide an answer."]
-   ;; Check if user-id has been asked a question
-   (nil? conversation) [[]"You haven't been asked a question."]
-   ;; Send answer back to the orginal question asker
-   :else [[(action-send-msg conversation (string/join " " args))]
-          "Your answer was sent."]))
+;;     :args ["number" "line name"]
+;; where "number" contains the number of people currently in the line "line name"
+(defn update-line-length [{:keys [user-id args]}]
+  (let [number (read-string (first args))
+        line (second args)]
+   ;; If input is valid, store the newly calculated wait time (to the closest whole minute)
+   (if (and (integer? number) (>= number 0) (not (nil? (get dining-info line))))
+    [[(action-insert [line] (int (+ 0.5 (* number (get-in dining-info [line :time])))))]
+     (str "Wait time in the " line " line successfully updated.")
+     [[(action-send-msg user-id "Invalid input. Please try again using the format 'update number name'")]
+      "Invalid input to update-line-length."]])))
 
 
-;; Asgn 3.
+;; update-open-status
 ;;
-;; @Todo: Create a function called "add-expert"
-;; that takes two parameters:
+;; Updates the status of the specified dining location, marking it
+;; as either open or closed
 ;;
-;; 1. the current list of experts on the topic
-;; 2. a parsed message with the format:
-;;    {:cmd "expert"
+;; Takes input as a parsed message with the format:
+;;    {:cmd "status"
 ;;     :user-id "+15555555555"
-;;     :args [topic]
+;;     :args ["line name" open/closed")]]])))
+;; where "line name" is the name of a campus dining location
+;; and "open/closed" is either the string "open" or "closed"
+(defn update-open-status [line-lengths {:keys [user-id args]}]
+  (let [line (first args)
+        status (second args)
+        curr-status (get line-lengths line)]
+   (cond
+     ;; Invalid input
+     (or (not (or (= status "open") (= status "closed"))) (nil? (get dining-info line)))
+     [[(action-send-msg user-id "Invalid input. Please try again using the format 'status name open/closed'")]
+      "Invalid input to update-open-status."]
+     ;; From closed to open
+     (and (= -1 curr-status) (= "open" status))
+     [[(action-insert [line] 0)] (str line " is now marked as open!")]
+     ;; From open to closed
+     (and (logic/!= -1 curr-status) (= "closed" status))
+     [[(action-insert [line] -1)] (str line " is now marked as closed :(")]
+     ;; No status change
+     :else
+     [[] (str line " is already marked as " status ".")])))
+
+
+;; get-open-status
 ;;
+;; Responds to the user with a text indicating whether the specified dining
+;; location is open or closed
 ;;
-;; The parsed message is generated by breaking up the words in the expert
-;; text message. For example, if someone sent the message:
+;; Takes input as a parsed message with the format:
+;;    {:cmd "open"
+;;     :user-id "+15555555555"
+;;     :args ["line name"]
+(defn get-open-status [line-lengths {:keys [args user-id]}]
+  (let [line (first args)
+        status (get line-lengths line)
+        answer (if (= -1 status)
+                 "closed"
+                 "open")]
+    (cond
+      ;; Invalid line name
+      (nil? (get dining-info line))
+      [[(action-send-msg user-id "Invalid input. Please try again using the format 'open name'")]
+       "Invalid line name given to get-open-status"]
+      ;; No information on open status
+      (nil? status)
+      [[(action-send-msg user-id (str line " status is not currently availale."))]
+       (str line " status is not currently availale.")]
+      ;; Valid line name with information--text the user
+      :else
+      [[(action-send-msg user-id (str line " is " answer "."))]
+       (str "Texting the user that " line " is " answer ".")])))
+
+
+;; shortest-line
 ;;
-;; "expert food"
+;; Responds to the user with a text indicating the campus dining line that is the shortest
+;; The user may also specify if they want to know the shortest line within a certain area
 ;;
-;; The parsed message would be:
+;; Takes input as a parsed message with the format:
+;;    {:cmd "shortest"
+;;     :user-id "+15555555555"
+;;     :args ["area"]
+;; where "area" is the name of an area of campus dining (ex. "rand")
+;; The "area" paramter is optional
+(defn shortest-line [line-lengths {:keys [user-id args]}]
+  (let [area (first args)
+        lengths-in-area (if ((or (= area "rand") (= area "other")))
+                          (filter #(= area (get-in dining-info [(first %) :area])) line-lengths)
+                          line-lengths)
+        format-area (if (or (= area "rand") (= area "other"))
+                      (str "in " area)
+                      "on campus")]
+
+    (cond
+     ;; If there is info available for desired areas
+     (not (or (empty? lengths-in-area) (nil? lengths-in-area)))
+     [[(action-send-msg user-id (str "The shortest line " format-area " is the "
+                                    ;; @InspiredBy
+                                    ;; @Source: https://www.spacjer.com/blog/2016/01/12/lesser-known-clojure-max-key-and-min-key/
+                                     (first (apply min-key second (filter #(logic/!= (second %) -1) lengths-in-area)))
+                                     ;; @EndInspiredBy
+                                     " line."))]
+      (str "Texting the user the name of shortest line " format-area ".")]
+
+     ;; No information availale on specified areas
+     :else
+     [[(action-send-msg user-id "Sorry, there is no information available on line length in the specified area.")]
+      "No information available on line length in the specified area."])))
+
+
+;; length-line
 ;;
-;; {:cmd "expert"
-;;  :user-id "+15555555555"))
-;;  :args ["food"]}
+;; Responds to the user with a text indicating the length of a given line
 ;;
-;; This function needs to add "sara" to the list of experts on "food" and
-;; associate her phone number with her ID.
+;; Takes input as a parsed message with the format:
+;;    {:cmd "length"
+;;     :user-id "+15555555555"
+;;     :args ["line name"]
+;; where "line name" is the name of a campus dining location
+(defn length-line [line-lengths {:keys [user-id args]}]
+  (let [line (first args)
+        length (get line-lengths line)]
+    (cond
+      ;; Invalid line name given
+      (nil? (get dining-info line))
+      [[(action-send-msg user-id "Please try again with the name of a valid campus dining location.")]
+       "Invalid line name sent to length-line."]
+      ;; No information on specified line
+      (nil? length)
+      [[(action-send-msg user-id "Sorry, there is no information available on your requested line.")]
+       "No information on the length of the given line"]
+      ;; The specifed dining location is closed
+      (= -1 length)
+      [[(action-send-msg user-id (str line " is currently closed."))] "Texted the user that the line is closed."]
+      ;; The dining location has information store and is open
+      :else
+      [[(action-send-msg user-id (str "The " line " line is currently " length " minutes long."))]
+       "Texted the user the length of the specified line."])))
+
+
+;; lines-under-length
 ;;
-;; This function needs to return a list with two elements:
-;; [[actions...] "response to the person adding themselves as an expert"]
+;; Responds to the user with a text of the list of campus dining locations
+;; with lines currently under the specified limit
 ;;
-;; The actions in the list are the *side effects* that need to take place
-;; to add the person as an expert on the topic (hint: result of calling experts-register). The string
-;; is the response that is going to be sent back to the person adding themselves
-;; as an expert.
-;;
-;; You should look at `handle-message` to get an idea of the way that this
-;; function is going to be used, its expected signature, and how the actions
-;; and output are going to work.
-;;
-;; See the integration test in See handle-message-test for the
-;; expectations on how your code operates
-;;
-(defn add-expert [experts {:keys [args user-id]}]
-  [[(experts-register experts (first args) user-id "user info")]
-   (str user-id " is now an expert on " (first args) ".")])
+;; Takes input as a parsed message with the format:
+;;    {:cmd "under"
+;;     :user-id "+15555555555"
+;;     :args ["minutes"]
+;; where minutes is the specified time limit lines the user is interested in
+(defn lines-under-length [line-lengths {:keys [user-id args]}]
+  (let [time-limit (first args)]
+    (cond
+      ;; Invalid time limit
+      (or (not (integer? time-limit)) (<= time-limit 0))
+      [[(action-send-msg user-id "Please try again with a valid time limit.")]
+       "Invalid time limit sent to lines-under-length"]
+      ;; No line length info entered
+      (nil? line-lengths)
+      [[(action-send-msg user-id "Sorry, there is no information available on line lengths.")]
+       "No information available on line lengths."]
+      ;; Valid input--find lines under the given time limit
+      :else
+      (let [lines-under (filter
+                         #(and (logic/!= (second %) -1)(< (second %) time-limit)) line-lengths)]
+        (if (empty? lines-under)
+         ;; No lines under time limit
+          [[(action-send-msg user-id (str "There are currently no lines under a " time-limit " minute wait."))]
+           "Texting the user that no lines are under the limit."]
+         ;; Send the user the list of lines under the time limit
+          [[(action-send-msg user-id (str "The lines under a " time-limit " wait are "
+                                      (string/join ", " (reduce #(conj %1 (first %2)) [] lines-under))))]
+           (str "Texting the user the list of lines under " time-limit " minutes.")])))))
 
 
 ;; Don't edit!
@@ -466,25 +333,16 @@
 
 
 (def routes {"default"  (stateless (fn [& args] "Unknown command."))
-             "welcome"  (stateless welcome)
-             "homepage" (stateless homepage)
-             "office"   (stateless office-hours)
-             "expert"   add-expert
-             "ask"      ask-experts
-             "answer"   answer-question})
-
-;; Asgn 3.
-;;
-;; @Todo: Add mappings of the cmds "expert", "ask", and "answer" to
-;; to the `routes` map so that the functions that you
-;; created will be invoked when the corresponding text message
-;; commands are received
-;;})
+             "update"   update-line-length
+             "status"   update-open-status
+             "open"     get-open-status
+             "shortest" shortest-line
+             "length"   length-line
+             "under"    lines-under-length})
 
 ;; Don't edit!
-(defn experts-on-topic-query [state-mgr pmsg]
-  (let [[topic]  (:args pmsg)]
-    (list! state-mgr [:expert topic])))
+(defn line-lengths-query [state-mgr pmsg]
+  state-mgr)
 
 
 ;; Don't edit!
@@ -495,9 +353,11 @@
 
 ;; Don't edit!
 (def queries
-  {"expert" experts-on-topic-query
-   "ask"    experts-on-topic-query
-   "answer" conversations-for-user-query})
+  {"status"   line-lengths-query
+   "open"     line-lengths-query
+   "shortest" line-lengths-query
+   "length"   line-lengths-query
+   "under"    line-lengths-query})
 
 
 ;; Don't edit!

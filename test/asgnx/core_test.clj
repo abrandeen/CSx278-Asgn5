@@ -50,48 +50,6 @@
             :args ["x" "y" "z" "somereallylongthing"]}
            (parsed-msg "foo x y z somereallylongthing")))))
 
-(deftest welcome-test
-  (testing "that welcome messages are correctly formatted"
-    (is (= "Welcome bob" (welcome {:cmd "welcome" :args ["bob"]})))
-    (is (= "Welcome bob" (welcome {:cmd "welcome" :args ["bob" "smith"]})))
-    (is (= "Welcome bob smith jr" (welcome {:cmd "welcome" :args ["bob smith jr"]})))))
-
-
-(deftest homepage-test
-  (testing "that the homepage is output correctly"
-    (is (= cs4278-brightspace (homepage {:cmd "homepage" :args []})))))
-
-
-(deftest format-hour-test
-  (testing "that 0-23 hour times are converted to am/pm correctly"
-    (is (= "1am" (format-hour 1)))
-    (is (= "1pm" (format-hour 13)))
-    (is (= "2pm" (format-hour 14)))
-    (is (= "12am" (format-hour 0)))
-    (is (= "12pm" (format-hour 12)))))
-
-
-(deftest formatted-hours-test
-  (testing "that the office hours data structure is correctly converted to a string"
-    (is (= "from 8am to 10am in the chairs outside of the Wondry"
-           (formatted-hours {:start 8 :end 10 :location "the chairs outside of the Wondry"})))
-    (is (= "from 4am to 2pm in the chairs outside of the Wondry"
-           (formatted-hours {:start 4 :end 14 :location "the chairs outside of the Wondry"})))
-    (is (= "from 2pm to 10pm in the chairs outside of the Wondry"
-           (formatted-hours {:start 14 :end 22 :location "the chairs outside of the Wondry"})))))
-
-
-(deftest office-hours-for-day-test
-  (testing "testing lookup of office hours on a specific day"
-    (is (= "from 8am to 10am in the chairs outside of the Wondry"
-           (office-hours {:cmd "office hours" :args ["thursday"]})))
-    (is (= "from 8am to 10am in the chairs outside of the Wondry"
-           (office-hours {:cmd "office hours" :args ["tuesday"]})))
-    (is (= "there are no office hours on that day"
-           (office-hours {:cmd "office" :args ["wednesday"]})))
-    (is (= "there are no office hours on that day"
-           (office-hours {:cmd "office" :args ["monday"]})))))
-
 
 (deftest create-router-test
   (testing "correct creation of a function to lookup a handler for a parsed message"
@@ -186,68 +144,307 @@
           smgr   (kvstore/create state)
           system {:state-mgr smgr
                   :effect-handlers ehdlrs}]
-      (is (= "There are no experts on that topic."
-             (<!! (handle-message
-                    system
-                    "test-user"
-                    "ask food best burger in nashville"))))
-      (is (= "test-user is now an expert on food."
-             (<!! (handle-message
-                    system
-                    "test-user"
-                    "expert food"))))
-      (is (= "Asking 1 expert(s) for an answer to: \"what burger\""
-             (<!! (handle-message
-                    system
-                    "test-user"
-                    "ask food what burger"))))
-      (is (= "what burger"
+
+
+     ;; initial state tests
+      (is (=  "pub status is not currently availale."
+              (<!! (handle-message
+                     system
+                     "test-user"
+                     "open pub"))))
+      (is (= "pub status is not currently availale."
              (<!! (pending-send-msgs system "test-user"))))
-      (is (= "test-user2 is now an expert on food."
-             (<!! (handle-message
-                    system
-                    "test-user2"
-                    "expert food"))))
-      (is (= "Asking 2 expert(s) for an answer to: \"what burger\""
-             (<!! (handle-message
-                    system
-                    "test-user"
-                    "ask food what burger"))))
-      (is (= "what burger"
+      (is (= "No information available on line length in the specified area."
+              (<!! (handle-message
+                     system
+                     "test-user"
+                     "shortest"))))
+      (is (= "Sorry, there is no information available on line length in the specified area."
              (<!! (pending-send-msgs system "test-user"))))
-      (is (= "what burger"
-             (<!! (pending-send-msgs system "test-user2"))))
-      (is (= "You must ask a valid question."
-             (<!! (handle-message
-                    system
-                    "test-user"
-                    "ask food "))))
-      (is (= "test-user is now an expert on nashville."
-             (<!! (handle-message
-                    system
-                    "test-user"
-                    "expert nashville"))))
-      (is (= "Asking 1 expert(s) for an answer to: \"what bus\""
-             (<!! (handle-message
-                    system
-                    "test-user2"
-                    "ask nashville what bus"))))
-      (is (= "what bus"
+      (is (= "No information on the length of the given line"
+              (<!! (handle-message
+                     system
+                     "test-user"
+                     "length pub"))))
+      (is (= "Sorry, there is no information available on your requested line."
              (<!! (pending-send-msgs system "test-user"))))
-      (is (= "Your answer was sent."
+
+
+
+       ;; update-line-length tests
+       ;;
+       ;; invalid input tests
+      (is (= "Invalid input to update-line-length."
              (<!! (handle-message
-                   system
-                   "test-user"
-                   "answer the blue bus"))))
-      (is (= "the blue bus"
-             (<!! (pending-send-msgs system "test-user2"))))
-      (is (= "You did not provide an answer."
+                    system
+                    "test-user"
+                    "update"))))
+      (is (= "Invalid input. Please try again using the format 'update number name'"
+            (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Invalid input to update-line-length."
              (<!! (handle-message
-                   system
-                   "test-user"
-                   "answer"))))
+                    system
+                    "test-user"
+                    "update cat pub"))))
+      (is (= "Invalid input to update-line-length."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 6 cat"))))
+      (is (= "Invalid input to update-line-length."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 5"))))
+      (is (= "Invalid input to update-line-length."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 37 83"))))
+      (is (= "Invalid input to update-line-length."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 2.5 bowls"))))
+      (is (= "Invalid input to update-line-length."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update -5 bowls"))))
+      ;; valid input tests
+      (is (= "Wait time in the bowls line successfully updated."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 10 bowls"))))
+     (is (= "No information on the length of the given line"
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "length pub"))))
+     (is (= "Sorry, there is no information available on your requested line."
+            (<!! (pending-send-msgs system "test-user")))
+      (is (= "Wait time in the randwich line successfully updated."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 7 randwich")))))
+     (is (= "No information available on line length in the specified area."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "shortest other"))))
+     (is (= "Sorry, there is no information available on line length in the specified area."
+            (<!! (pending-send-msgs system "test-user")))
+      (is (= "Wait time in the pasta line successfully updated."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 30 pasta"))))
+      (is (= "Wait time in the pub line successfully updated."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 14 pub"))))
+      (is (= "Wait time in the grins line successfully updated."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 10 grins"))))
+      (is (= "Wait time in the grins line successfully updated."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 16 grins"))))
+      (is (= "Wait time in the kissam line successfully updated."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "update 7 kissam"))))
+
+
+     ;; update-open-status tests
+     ;;
+     ;; invalid input tests
+      (is (= "Invalid input to update-open-status."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "status"))))
+      (is (= "Invalid input. Please try again using the format 'status name open/closed'"
+            (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Invalid input to update-open-status."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "status grins pink"))))
+      (is (= "Invalid input to update-open-status."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "status pink open"))))
+      (is (= "Invalid input to update-open-status."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "status grins"))))
+      ;; valid input tests
+      (is (= "grins is already marked as open."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "status grins open"))))
+      (is (= "grins is now marked as closed :("
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "status grins closed"))))
+      (is (= "grins is already marked as closed."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "status grins closed"))))
+      (is (= "grins is now marked as open!"
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "status grins open"))))
+
+      ;; get-open-status tests
+      ;; invalid input tests
+      (is (= "Invalid line name given to get-open-status"
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "open"))))
+      (is (= "Invalid input. Please try again using the format 'open name'"
+            (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Invalid line name given to get-open-status"
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "open pink"))))
+      ;; valid input tests
+      (is (= "Texting the user that grins is open."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "open grins"))))
+      (is (= "grins is now marked as closed :("
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "status grins closed"))))
+      (is (= "Texting the user that grins is closed."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "open grins"))))
+
+      ;; shortest-line tests
+      (is (= "Texting the user the name of shortest line on campus."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "shortest pink"))))
+      (is (= "The shortest line on campus is the kissam line."
+             (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Texting the user the name of shortest line on campus."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "shortest"))))
+      (is (= "The shortest line on campus is the kissam line."
+             (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Texting the user the name of shortest line in rand"
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "shortest rand"))))
+      (is (= "The shortest line in rand is the randwich line."
+             (<!! (pending-send-msgs system "test-user"))))
+
+      ;; length-line tests
+      ;; invalid input
+      (is (= "Invalid line name sent to length-line."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "length"))))
+      (is (= "Please try again with the name of a valid campus dining location."
+             (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Invalid line name sent to length-line."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "length purple"))))
+      (is (= "Please try again with the name of a valid campus dining location."
+             (<!! (pending-send-msgs system "test-user"))))
+      ;; valid input
+      (is (= "Wait time in the grins line successfully updated."
+             (<!! (handle-message)
+                  system
+                  "test-user"
+                  "update 16 grins")))
+      (is (= "Texted the user the length of the specified line."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "length bowls"))))
+      (is (= "The bowls line is currently 20 minutes long."
+             (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Texted the user the length of the specified line."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "length randwich"))))
+      (is (= "The randwich line is currently 16 minutes long."
+             (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Texted the user the length of the specified line."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "length pasta"))))
+      (is (= "The pasta line is currently 45 minutes long."
+             (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Texted the user the length of the specified line."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "length pub"))))
+      (is (= "The pub line is currently 39 minutes long."
+             (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Texted the user the length of the specified line."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "length grins"))))
+      (is (= "The grins line is currently 56 minutes long."
+             (<!! (pending-send-msgs system "test-user"))))
+      (is (= "Texted the user the length of the specified line."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "length kissam"))))
+      (is (= "The kissam line is currently 12 minutes long."
+             (<!! (pending-send-msgs system "test-user"))))
+      (is (= "grins is now marked as closed :("
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "status grins closed"))))
+      (is (= "Texted the user that the line is closed."
+             (<!! (handle-message
+                    system
+                    "test-user"
+                    "length grins"))))
+      (is (= "grins is currently closed."
+             (<!! (pending-send-msgs system "test-user"))))
+
+
+      ;; lines-under-length tests
       (is (= "You haven't been asked a question."
              (<!! (handle-message
                    system
                    "test-user3"
-                   "answer the blue bus")))))))
+                   "answer the blue bus"))))))))
