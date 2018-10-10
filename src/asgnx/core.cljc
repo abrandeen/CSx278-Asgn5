@@ -120,6 +120,28 @@
   (sorted-map :action :assoc-in :ks ks :v v))
 
 
+;; is-number
+;;
+;; Returns true if the parameter str (a string) is a positive integer
+(defn is-number [str]
+ (cond
+   ;; str is nil, return false (only could be nil if orginal call str is nil)
+   (nil? str)
+   false
+   ;; checked all digits in str already, return true
+   (empty? str)
+   true
+   ;; first char in str is not numeric, return faslse
+   ;; @InspiredBy
+   ;; @Source: https://stackoverflow.com/questions/3249334/test-whether-a-list-contains-a-specific-value-in-clojure
+   (not (some #(= (subs str 0 1) %) ["0" "1" "2" "3" "4" "5" "6" "7" "8" "9"]))
+   ;; @EndInspiredBy
+   false
+   ;; first char is numeric, check remaining chars
+   :else
+   (is-number (subs str 1))))
+
+
 ;; update-line-length
 ;;
 ;; Updates the length of a specified campus dining line by accepting the
@@ -132,8 +154,9 @@
 ;;     :args ["number" "line name"]
 ;; where "number" contains the number of people currently in the line "line name"
 (defn update-line-length [ line-lengths {:keys [user-id args]}]
-  (let [number (if (not (nil? (first args)))
-                 (read-string (first args))
+  (let [number (if (is-number (first args))
+                 #?(:cljs (js/parseInt (first args))
+                    :clj   (Integer/parseInt (first args)))
                  "invalid")
         line (second args)]
    ;; If input is valid, store the newly calculated wait time (to the closest whole minute)
@@ -290,9 +313,10 @@
 ;;     :args ["minutes"]
 ;; where minutes is the specified time limit lines the user is interested in
 (defn lines-under-length [line-lengths {:keys [user-id args]}]
-  (let [time-limit (if (nil? (first args))
-                     "invalid"
-                     (read-string (first args)))]
+  (let [time-limit (if (is-number (first args))
+                     #?(:cljs (js/parseInt (first args))
+                        :clj   (Integer/parseInt (first args)))
+                     "invalid")]
     (cond
       ;; Invalid time limit
       (or (not (integer? time-limit)) (<= time-limit 0))
