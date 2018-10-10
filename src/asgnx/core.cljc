@@ -20,6 +20,10 @@
                   "grins"     {:time 3.5 :area "other"}
                   "kissam"    {:time 1.75 :area "other"}})
 
+;; Do not edit!
+;; A def for the course home page URL.
+(def cs4278-brightspace "https://brightspace.vanderbilt.edu/d2l/home/85892")
+
 ;; Asgn 1.
 ;;
 ;; @Todo: Fill in this function to return the first word in a text
@@ -77,6 +81,17 @@
 (defn welcome [pmsg]
   (let [x (str "Welcome " (first (get pmsg :args)))]
     (do (print x) x)))
+
+;; Asgn 1.
+;;
+;; @Todo: Fill in this function to return the CS 4278 home page.
+;; Use the `cs4278-brightspace` def to produce the output.
+;;
+;; See the homepage-test in test/asgnx/core_test.clj for the
+;; complete specification.
+;;
+(defn homepage [_]
+  cs4278-brightspace)
 
 
 ;; Asgn 2.
@@ -309,6 +324,7 @@
 
 (def routes {"default"  (stateless (fn [& args] "Unknown command."))
              "welcome"  (stateless welcome)
+             "homepage" (stateless homepage)
              "update"   update-line-length
              "status"   update-open-status
              "open"     get-open-status
