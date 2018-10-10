@@ -61,6 +61,24 @@
 (defn parsed-msg [msg]
   (hash-map :cmd (cmd msg) :args (args msg)))
 
+
+;; Asgn 1.
+;;
+;; @Todo: Fill in this function to prefix the first of the args
+;; in a parsed message with "Welcome " and return the result.
+;;
+;; Example:
+;;
+;; (welcome {:cmd "welcome" :args ["foo"]}) => "Welcome foo"
+;;
+;; See the welcome-test in test/asgnx/core_test.clj for the
+;; complete specification.
+;;
+(defn welcome [pmsg]
+  (let [x (str "Welcome " (first (get pmsg :args)))]
+    (do (print x) x)))
+
+
 ;; Asgn 2.
 ;;
 ;; @Todo: Create a function called action-send-msg that takes
@@ -75,24 +93,6 @@
 
 ;; Asgn 2.
 ;;
-;; @Todo: Create a function called action-send-msgs that takes
-;; takes a list of people to receive a message in a `people`
-;; parameter and a message to send them in a `msg` parmaeter
-;; and returns a list produced by invoking the above `action-send-msg`
-;; function on each person in the people list.
-;;
-;; java-like pseudo code:
-;;
-;; output = new list
-;; for person in people:
-;;   output.add( action-send-msg(person, msg) )
-;; return output
-;;
-(defn action-send-msgs [people msg]
-  (map #(action-send-msg % msg) people))
-
-;; Asgn 2.
-;;
 ;; @Todo: Create a function called action-insert that takes
 ;; a list of keys in a `ks` parameter, a value to bind to that
 ;; key path to in a `v` parameter, and returns a map with
@@ -103,41 +103,6 @@
 ;;
 (defn action-insert [ks v]
   (sorted-map :action :assoc-in :ks ks :v v))
-
-;; Asgn 2.
-;;
-;; @Todo: Create a function called action-inserts that takes:
-;; 1. a key prefix (e.g., [:a :b])
-;; 2. a list of suffixes for the key (e.g., [:c :d])
-;; 3. a value to bind
-;;
-;; and calls (action-insert combined-key value) for each possible
-;; combined-key that can be produced by appending one of the suffixes
-;; to the prefix.
-;;
-;; In other words, this invocation:
-;;
-;; (action-inserts [:foo :bar] [:a :b :c] 32)
-;;
-;; would be equivalent to this:
-;;
-;; [(action-insert [:foo :bar :a] 32)
-;;  (action-insert [:foo :bar :b] 32)
-;;  (action-insert [:foo :bar :c] 32)]
-;;
-(defn action-inserts [prefix ks v]
-  (map #(action-insert (conj prefix %) v) ks))
-
-;; Asgn 2.
-;;
-;; @Todo: Create a function called action-remove that takes
-;; a list of keys in a `ks` parameter and returns a map with
-;; the key :ks bound to the `ks` parameter value.
-;; The map should also have the key :action bound to the value
-;; :dissoc-in.
-;;
-(defn action-remove [ks]
-  (sorted-map :action :dissoc-in :ks ks))
 
 
 ;; update-line-length
@@ -151,7 +116,7 @@
 ;;     :user-id "+15555555555"
 ;;     :args ["number" "line name"]
 ;; where "number" contains the number of people currently in the line "line name"
-(defn update-line-length [line-lengths {:keys [user-id args]}]
+(defn update-line-length [ line-lengths {:keys [user-id args]}]
   (let [number (if (not (nil? (first args)))
                  (read-string (first args))
                  "invalid")
@@ -159,10 +124,11 @@
    ;; If input is valid, store the newly calculated wait time (to the closest whole minute)
    (if
      (and (integer? number) (>= number 0) (not (nil? (get dining-info line))))
-    [[(action-insert [:lengths line] (int (+ 0.5 (* number (get-in dining-info [line :time])))))]
+    [[(action-insert [:lengths line] (int (+ 0.5 (* number (get-in dining-info [line :time])))))
+      (action-send-msg user-id (str "Thank you for updating the length of the " line " line."))]
      (str "Wait time in the " line " line successfully updated.")]
-     [[(action-send-msg user-id "Invalid input. Please try again using the format 'update number name'")]
-      "Invalid input to update-line-length."])))
+    [[(action-send-msg user-id "Invalid input. Please try again using the format 'update number name'")]
+     "Invalid input to update-line-length."])))
 
 
 ;; update-open-status
@@ -175,7 +141,7 @@
 ;;     :user-id "+15555555555"
 ;;     :args ["line name" open/closed")]]])))
 ;; where "line name" is the name of a campus dining location
-;; and "open/closed" is either the string "open" or "closed"
+;; and "open/closed" is either the string "open" or "closed
 (defn update-open-status [line-lengths {:keys [user-id args]}]
   (let [line (first args)
         status (second args)
@@ -186,14 +152,19 @@
      [[(action-send-msg user-id "Invalid input. Please try again using the format 'status name open/closed'")]
       "Invalid input to update-open-status."]
      ;; From closed to open
-     (and (= -1 curr-status) (= "open" status))
-     [[(action-insert [:lengths line] 0)] (str line " is now marked as open!")]
+     (and (or (nil? curr-status)(= -1 curr-status))(= "open" status))
+     [[(action-insert [:lengths line] 0)
+       (action-send-msg user-id (str "Thank you for reporting " line " has opened."))]
+      (str line " is now marked as open!")]
      ;; From open to closed
      (and (not (= -1 curr-status)) (= "closed" status))
-     [[(action-insert [:lengths line] -1)] (str line " is now marked as closed :(")]
+     [[(action-insert [:lengths line] -1)
+       (action-send-msg user-id (str "Thank you for reporting " line " has closed."))]
+      (str line " is now marked as closed :(")]
      ;; No status change
      :else
-     [[] (str line " is already marked as " status ".")])))
+     [[(action-send-msg user-id (str "Thank you for reporting " line " is still " status "."))]
+      (str line " is already marked as " status ".")])))
 
 
 ;; get-open-status
@@ -218,8 +189,8 @@
        "Invalid line name given to get-open-status"]
       ;; No information on open status
       (nil? status)
-      [[(action-send-msg user-id (str line " status is not currently availale."))]
-       (str line " status is not currently availale.")]
+      [[(action-send-msg user-id (str line " status is not currently available."))]
+       (str line " status is not currently available.")]
       ;; Valid line name with information--text the user
       :else
       [[(action-send-msg user-id (str line " is " answer "."))]
@@ -257,7 +228,7 @@
                                      " line."))]
       (str "Texting the user the name of shortest line " format-area ".")]
 
-     ;; No information availale on specified areas
+     ;; No information available on specified areas
      :else
      [[(action-send-msg user-id "Sorry, there is no information available on line length in the specified area.")]
       "No information available on line length in the specified area."])))
@@ -337,6 +308,7 @@
 
 
 (def routes {"default"  (stateless (fn [& args] "Unknown command."))
+             "welcome"  (stateless welcome)
              "update"   update-line-length
              "status"   update-open-status
              "open"     get-open-status
@@ -344,18 +316,11 @@
              "length"   length-line
              "under"    lines-under-length})
 
-;; Don't edit!
+
 (defn line-lengths-query [state-mgr pmsg]
   (get! state-mgr [:lengths]))
 
 
-;; Don't edit!
-(defn conversations-for-user-query [state-mgr pmsg]
-  (let [user-id (:user-id pmsg)]
-    (get! state-mgr [:conversations user-id])))
-
-
-;; Don't edit!
 (def queries
   {"update"   line-lengths-query
    "status"   line-lengths-query

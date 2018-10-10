@@ -50,6 +50,12 @@
             :args ["x" "y" "z" "somereallylongthing"]}
            (parsed-msg "foo x y z somereallylongthing")))))
 
+(deftest welcome-test
+  (testing "that welcome messages are correctly formatted"
+    (is (= "Welcome bob" (welcome {:cmd "welcome" :args ["bob"]})))
+    (is (= "Welcome bob" (welcome {:cmd "welcome" :args ["bob" "smith"]})))
+    (is (= "Welcome bob smith jr" (welcome {:cmd "welcome" :args ["bob smith jr"]})))))
+
 
 (deftest create-router-test
   (testing "correct creation of a function to lookup a handler for a parsed message"
@@ -76,20 +82,6 @@
     (is (= "foo"
            (:msg (action-send-msg [:a :b] "foo"))))))
 
-
-(deftest action-send-msgs-test
-  (testing "That action send msgs generates a list of sends"
-    (let [a (action-send-msg [:a :f :b] 1)
-          b (action-send-msg [:a :f :d] 1)
-          c (action-send-msg [:a :f :e] 1)
-          d (action-send-msg [:a :f :c] 1)]
-      (is (= [a b c d]
-             (action-send-msgs [[:a :f :b]
-                                [:a :f :d]
-                                [:a :f :e]
-                                [:a :f :c]]
-                              1))))))
-
 (deftest action-insert-test
   (testing "That action insert returns a correctly formatted map"
     (is (= #{:action :ks :v}
@@ -102,28 +94,6 @@
            (:v (action-insert [:a :b] {:foo 1}))))
     (is (= [:a :b]
            (:ks (action-insert [:a :b] {:foo 1}))))))
-
-
-(deftest action-remove-test
-  (testing "That action remove returns a correctly formatted map"
-    (is (= #{:action :ks}
-         (into #{} (keys (action-remove [:a :b])))))
-    (is (= #{:dissoc-in [:a :b]}
-          (into #{}(vals (action-remove [:a :b])))))
-    (is (= :dissoc-in
-           (:action (action-remove [:a :b]))))
-    (is (= [:a :b]
-           (:ks (action-remove [:a :b]))))))
-
-
-(deftest action-inserts-test
-  (testing "That action inserts generates a list of inserts"
-    (let [a (action-insert [:a :f :b] 1)
-          b (action-insert [:a :f :d] 1)
-          c (action-insert [:a :f :e] 1)
-          d (action-insert [:a :f :c] 1)]
-      (is (= [a b c d]
-             (action-inserts [:a :f] [:b :d :e :c] 1))))))
 
 
 (defn action-send [system {:keys [to msg]}]
@@ -147,12 +117,12 @@
 
 
      ;; initial state tests
-      (is (=  "pub status is not currently availale."
+      (is (=  "pub status is not currently available."
               (<!! (handle-message
                      system
                      "test-user"
                      "open pub"))))
-      (is (= "pub status is not currently availale."
+      (is (= "pub status is not currently available."
              (<!! (pending-send-msgs system "test-user"))))
       (is (= "No information available on line length in the specified area."
               (<!! (handle-message
@@ -224,6 +194,8 @@
                     system
                     "test-user"
                     "update 10 bowls"))))
+     (is (= "Thank you for updating the length of the bowls line."
+           (<!! (pending-send-msgs system "test-user"))))
      (is (= "No information on the length of the given line"
              (<!! (handle-message
                     system
@@ -300,22 +272,30 @@
             (<!! (handle-message
                    system
                    "test-user"
-                   "status grins open"))))
+                   "status grins open")))
+      (is (= "Thank you for reporting grins is still open."
+            (<!! (pending-send-msgs system "test-user")))))
      (is (= "grins is now marked as closed :("
             (<!! (handle-message
                    system
                    "test-user"
-                   "status grins closed"))))
+                   "status grins closed")))
+      (is (= "Thank you for reporting grins has closed."
+            (<!! (pending-send-msgs system "test-user")))))
      (is (= "grins is already marked as closed."
             (<!! (handle-message
                    system
                    "test-user"
-                   "status grins closed"))))
+                   "status grins closed")))
+      (is (= "Thank you for reporting grins is still closed."
+            (<!! (pending-send-msgs system "test-user")))))
      (is (= "grins is now marked as open!"
             (<!! (handle-message
                    system
                    "test-user"
-                   "status grins open"))))
+                   "status grins open")))
+      (is (= "Thank you for reporting grins has opened."
+            (<!! (pending-send-msgs system "test-user")))))
 
      ;; get-open-status tests
      ;; invalid input tests
@@ -337,6 +317,8 @@
                    system
                    "test-user"
                    "open grins"))))
+     (is (= "grins is open."
+           (<!! (pending-send-msgs system "test-user"))))
      (is (= "grins is now marked as closed :("
             (<!! (handle-message
                    system
@@ -347,6 +329,8 @@
                    system
                    "test-user"
                    "open grins"))))
+     (is (= "grins is closed."
+           (<!! (pending-send-msgs system "test-user"))))
 
      ;; shortest-line tests
      (is (= "Texting the user the name of shortest line on campus."
