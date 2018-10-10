@@ -139,7 +139,7 @@
    ;; If input is valid, store the newly calculated wait time (to the closest whole minute)
    (if
      (and (integer? number) (>= number 0) (not (nil? (get dining-info line))))
-    [[(action-insert [:lengths line] (int (+ 0.5 (* number (get-in dining-info [line :time])))))
+    [[(action-insert [:lengths] (assoc line-lengths line (int (+ 0.5 (* number (get-in dining-info [line :time]))))))
       (action-send-msg user-id (str "Thank you for updating the length of the " line " line."))]
      (str "Wait time in the " line " line successfully updated.")]
     [[(action-send-msg user-id "Invalid input. Please try again using the format 'update number name'")]
@@ -168,12 +168,12 @@
       "Invalid input to update-open-status."]
      ;; From closed to open
      (and (or (nil? curr-status)(= -1 curr-status))(= "open" status))
-     [[(action-insert [:lengths line] 0)
+     [[(action-insert [:lengths] (assoc line-lengths line 0))
        (action-send-msg user-id (str "Thank you for reporting " line " has opened."))]
       (str line " is now marked as open!")]
      ;; From open to closed
      (and (not (= -1 curr-status)) (= "closed" status))
-     [[(action-insert [:lengths line] -1)
+     [[(action-insert [:lengths] (assoc line-lengths line -1))
        (action-send-msg user-id (str "Thank you for reporting " line " has closed."))]
       (str line " is now marked as closed :(")]
      ;; No status change
