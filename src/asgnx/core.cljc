@@ -153,7 +153,7 @@
 ;;     :user-id "+15555555555"
 ;;     :args ["number" "line name"]
 ;; where "number" contains the number of people currently in the line "line name"
-(defn update-line-length [ line-lengths {:keys [user-id args]}]
+(defn update-line-length [ line-lengths {:keys [args]}]
   (let [number (if (is-number (first args))
                  #?(:cljs (js/parseInt (first args))
                     :clj   (Integer/parseInt (first args)))
@@ -162,11 +162,10 @@
    ;; If input is valid, store the newly calculated wait time (to the closest whole minute)
    (if
      (and (integer? number) (>= number 0) (not (nil? (get dining-info line))))
-    [[(action-insert [:lengths] (assoc line-lengths line (int (+ 0.5 (* number (get-in dining-info [line :time]))))))
-      (action-send-msg user-id (str "Thank you for updating the length of the " line " line."))]
+    [[(action-insert [:lengths] (assoc line-lengths line (int (+ 0.5 (* number (get-in dining-info [line :time]))))))]
      (str "Wait time in the " line " line successfully updated.")]
-    [[(action-send-msg user-id "Invalid input. Please try again using the format 'update number name'")]
-     "Invalid input to update-line-length."])))
+    [[]
+     "Invalid input. Please try again using the format 'update number name'"])))
 
 
 ;; update-open-status
@@ -180,29 +179,26 @@
 ;;     :args ["line name" open/closed")]]])))
 ;; where "line name" is the name of a campus dining location
 ;; and "open/closed" is either the string "open" or "closed
-(defn update-open-status [line-lengths {:keys [user-id args]}]
+(defn update-open-status [line-lengths {:keys [args]}]
   (let [line (first args)
         status (second args)
         curr-status (get line-lengths line)]
    (cond
      ;; Invalid input
      (or (not (or (= status "open") (= status "closed"))) (nil? (get dining-info line)))
-     [[(action-send-msg user-id "Invalid input. Please try again using the format 'status name open/closed'")]
-      "Invalid input to update-open-status."]
+     [[]"Invalid input. Please try again using the format 'status name open/closed'"]
      ;; From closed to open
      (and (or (nil? curr-status)(= -1 curr-status))(= "open" status))
-     [[(action-insert [:lengths] (assoc line-lengths line 0))
-       (action-send-msg user-id (str "Thank you for reporting " line " has opened."))]
-      (str line " is now marked as open!")]
+     [[(action-insert [:lengths] (assoc line-lengths line 0))]
+      (str "Thank you for reporting " line " has opened.")]
      ;; From open to closed
      (and (not (= -1 curr-status)) (= "closed" status))
-     [[(action-insert [:lengths] (assoc line-lengths line -1))
-       (action-send-msg user-id (str "Thank you for reporting " line " has closed."))]
-      (str line " is now marked as closed :(")]
+     [[(action-insert [:lengths] (assoc line-lengths line -1))]
+      (str "Thank you for reporting " line " has closed.")]
      ;; No status change
      :else
-     [[(action-send-msg user-id (str "Thank you for reporting " line " is still " status "."))]
-      (str line " is already marked as " status ".")])))
+     [[]
+      (str "Thank you for reporting " line " is still " status ".")])))
 
 
 ;; get-open-status
@@ -214,7 +210,7 @@
 ;;    {:cmd "open"
 ;;     :user-id "+15555555555"
 ;;     :args ["line name"]
-(defn get-open-status [line-lengths {:keys [args user-id]}]
+(defn get-open-status [line-lengths {:keys [args]}]
   (let [line (first args)
         status (get line-lengths line)
         answer (if (= -1 status)
@@ -223,16 +219,13 @@
     (cond
       ;; Invalid line name
       (nil? (get dining-info line))
-      [[(action-send-msg user-id "Invalid input. Please try again using the format 'open name'")]
-       "Invalid line name given to get-open-status"]
+      [[] "Invalid input. Please try again using the format 'open name'"]
       ;; No information on open status
       (nil? status)
-      [[(action-send-msg user-id (str line " status is not currently available."))]
-       (str line " status is not currently available.")]
+      [[](str line " status is not currently available.")]
       ;; Valid line name with information--text the user
       :else
-      [[(action-send-msg user-id (str line " is " answer "."))]
-       (str "Texting the user that " line " is " answer ".")])))
+      [[](str line " is " answer ".")])))
 
 
 ;; shortest-line
@@ -246,7 +239,7 @@
 ;;     :args ["area"]
 ;; where "area" is the name of an area of campus dining (ex. "rand")
 ;; The "area" paramter is optional
-(defn shortest-line [line-lengths {:keys [user-id args]}]
+(defn shortest-line [line-lengths {:keys [args]}]
   (let [area (first args)
         lengths-in-area (if (or (= area "rand") (= area "other"))
                           (filter #(= area (get-in dining-info [(first %) :area])) line-lengths)
@@ -258,18 +251,16 @@
     (cond
      ;; If there is info available for desired areas
      (not (or (empty? lengths-in-area) (nil? lengths-in-area)))
-     [[(action-send-msg user-id (str "The shortest line " format-area " is the "
-                                    ;; @InspiredBy
-                                    ;; @Source: https://www.spacjer.com/blog/2016/01/12/lesser-known-clojure-max-key-and-min-key/
-                                     (first (apply min-key second (filter #(not (= (second %) -1)) lengths-in-area)))
-                                     ;; @EndInspiredBy
-                                     " line."))]
-      (str "Texting the user the name of shortest line " format-area ".")]
+     [[](str "The shortest line " format-area " is the "
+            ;; @InspiredBy
+            ;; @Source: https://www.spacjer.com/blog/2016/01/12/lesser-known-clojure-max-key-and-min-key/
+             (first (apply min-key second (filter #(not (= (second %) -1)) lengths-in-area)))
+             " line.")]
+            ;; @EndInspiredBy
 
      ;; No information available on specified areas
      :else
-     [[(action-send-msg user-id "Sorry, there is no information available on line length in the specified area.")]
-      "No information available on line length in the specified area."])))
+     [[] "No information available on line length in the specified area."])))
 
 
 ;; length-line
@@ -281,25 +272,22 @@
 ;;     :user-id "+15555555555"
 ;;     :args ["line name"]
 ;; where "line name" is the name of a campus dining location
-(defn length-line [line-lengths {:keys [user-id args]}]
+(defn length-line [line-lengths {:keys [args]}]
   (let [line (first args)
         length (get line-lengths line)]
     (cond
       ;; Invalid line name given
       (nil? (get dining-info line))
-      [[(action-send-msg user-id "Please try again with the name of a valid campus dining location.")]
-       "Invalid line name sent to length-line."]
+      [[] "Please try again with the name of a valid campus dining location."]
       ;; No information on specified line
       (nil? length)
-      [[(action-send-msg user-id "Sorry, there is no information available on your requested line.")]
-       "No information on the length of the given line"]
+      [[] "No information on the length of the given line"]
       ;; The specifed dining location is closed
       (= -1 length)
-      [[(action-send-msg user-id (str line " is currently closed."))] "Texted the user that the line is closed."]
+      [[] (str line " is currently closed.")]
       ;; The dining location has information store and is open
       :else
-      [[(action-send-msg user-id (str "The " line " line is currently " length " minutes long."))]
-       "Texted the user the length of the specified line."])))
+      [[] (str "The " line " line is currently " length " minutes long.")])))
 
 
 ;; lines-under-length
@@ -312,7 +300,7 @@
 ;;     :user-id "+15555555555"
 ;;     :args ["minutes"]
 ;; where minutes is the specified time limit lines the user is interested in
-(defn lines-under-length [line-lengths {:keys [user-id args]}]
+(defn lines-under-length [line-lengths {:keys [args]}]
   (let [time-limit (if (is-number (first args))
                      #?(:cljs (js/parseInt (first args))
                         :clj   (Integer/parseInt (first args)))
@@ -320,24 +308,20 @@
     (cond
       ;; Invalid time limit
       (or (not (integer? time-limit)) (<= time-limit 0))
-      [[(action-send-msg user-id "Please try again with a valid time limit.")]
-       "Invalid time limit sent to lines-under-length."]
+      [[] "Please try again with a valid time limit."]
       ;; No line length info entered
       (nil? line-lengths)
-      [[(action-send-msg user-id "Sorry, there is no information available on line lengths.")]
-       "No information available on line lengths."]
+      [[] "No information available on line lengths."]
       ;; Valid input--find lines under the given time limit
       :else
       (let [lines-under (filter
                          #(and (not (= (second %) -1))(< (second %) time-limit)) line-lengths)]
         (if (empty? lines-under)
          ;; No lines under time limit
-          [[(action-send-msg user-id (str "There are currently no lines under a " time-limit " minute wait."))]
-           "Texting the user that no lines are under the limit."]
+          [[] (str "There are currently no lines under a " time-limit " minute wait.")]
          ;; Send the user the list of lines under the time limit
-          [[(action-send-msg user-id (str "The lines under a " time-limit " minute wait are "
-                                      (string/join ", " (reduce #(conj %1 (first %2)) [] lines-under))))]
-           (str "Texting the user the list of lines under " time-limit " minutes.")])))))
+          [[] (str "The lines under a " time-limit " minute wait are "
+                   (string/join ", " (reduce #(conj %1 (first %2)) [] lines-under)))])))))
 
 
 ;; Don't edit!
